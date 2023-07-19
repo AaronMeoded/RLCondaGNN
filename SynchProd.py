@@ -50,7 +50,12 @@ trace.append(Event({'concept:name': 'B'}))
 # Parameters for alignment
 parameters = {"ret_tuple_as_trans_desc": True}
 
+
 # Step 3: Compute alignment
-aligned_trace = align(trace, net, initial_marking, final_marking, parameters=parameters)
+def main(trace, net):
+    aligned_trace = align(trace, net, initial_marking=p1, final_marking = p2, parameters=parameters)
+    return aligned_trace
+
 if __name__ == "__main__":
-    print(aligned_trace)
+    main(sys.argv[1], sys.argv[2])
+    # print(aligned_trace)

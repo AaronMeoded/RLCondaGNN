@@ -3,14 +3,59 @@ import torch
 from torch_geometric.nn import GCNConv
 import torch_geometric as tg
 import numpy as np
+from torch_geometric.data import Data
 
+
+# map log, model or synchronous move to weight in the graph
+def cost(action):
+    if "<<" in action:
+        return 1+10**-5
+    return 10**-10
+
+
+# Edge pairs
+edges = [
+    (0, 1),
+    (0, 2),
+    (0, 3),
+    (1, 3),
+    (2, 3),
+    (2, 4),
+    (3, 5),
+    (2, 5),
+    (4, 5)
+]
+
+# Convert edge pairs to tensor for PyG graph
+edge_index = torch.tensor(edges, dtype=torch.long).t().contiguous()
+
+# Create edge to tuple mapping
+edge_to_tuple = {
+    0: ('<<', 'A'),  # edge 0-1
+    1: ('A', '<<'),  # edge 0-2
+    2: ('A', 'A'),   # edge 0-3
+    3: ('A', '<<'),  # edge 1-3
+    4: ('<<', 'A'),  # edge 2-3
+    5: ('B', '<<'),  # edge 2-4
+    6: ('B', '<<'),  # edge 3-5
+    7: ('B', 'B'),   # edge 2-5
+    8: ('<<', 'A')   # edge 4-5
+}
+
+# Edge weights (you can use any numerical data you prefer here)
+edge_weight = torch.tensor([cost(edge_to_tuple[0]), cost(edge_to_tuple[1]), cost(edge_to_tuple[2]),
+                            cost(edge_to_tuple[3]), cost(edge_to_tuple[4]), cost(edge_to_tuple[5]),
+                            cost(edge_to_tuple[6]), cost(edge_to_tuple[7]), cost(edge_to_tuple[8])], dtype=torch.float)
+
+# Create PyG graph
+data = Data(x=torch.ones(6, 1), edge_index=edge_index, edge_attr=edge_weight)
+
+# Reconstruct the Path: Given a path (list of edge indices), put in map to get the alignment.
+path = [0, 2, 6]  # <-- example
+path_tuples = [edge_to_tuple[edge_index] for edge_index in path]
 
 # data preprocessing. #1 load dataset. #2. Inductive miner to get process model.
 #                     #3 Convert to PyG friendly format. #4 Figure out how to construct on the fly.
-# Preprocess your graph data into PyTorch Geometric format
-# This is a place holder and you will need to replace it with your own data
-# data = tg.data.Data(x=torch.randn(100, num_node_features), edge_index=torch.randint(100, (2, 500)))
-
 # dataset = 'prBm6'
 #
 # # load dataset:
@@ -52,6 +97,7 @@ class GCN(torch.nn.Module):
         x = self.conv2(x, edge_index)
 
         return x
+
 
 # define policy network
 class PolicyNetwork(torch.nn.Module):
@@ -138,8 +184,6 @@ class GraphEnv:
         self.current_state = next_state
 
         return next_state, reward, done
-
-
 
 
 # Create network and optimizer
